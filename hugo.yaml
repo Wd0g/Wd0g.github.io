@@ -1,0 +1,84 @@
+baseURL: https://wd0g.github.io/
+title: Wd0g's Universe
+theme: PaperMod
+copyright: "© [Wd0g](https://wd0g.github.io/)"
+pagination.pagerSize: 5
+
+categoriesMenu: true
+enableTags: true
+enableCategories: true
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+pygmentsUseClasses: true
+mainsections: ["posts", "code", "life"]
+
+minify:
+  disableXML: true
+  # minifyOutput: true
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+params:
+  env: production # to enable google analytics, opengraph, twitter-cards and schema.
+  description: "Wd0g's Universe"
+  author: Wd0g
+
+  homeInfoParams:
+    Title: 那我就说两句儿
+    Content: 无限生活，无限进步。
+
+
+  defaultTheme: auto
+  # disableThemeToggle: true
+  ShowShareButtons: false
+  ShowReadingTime: true
+  # disableSpecial1stPost: true
+  displayFullLangName: true
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowRssButtonInSectionTermList: true
+  ShowAllPagesInArchive: true
+  ShowPageNums: true
+  ShowToc: true
+
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+    # anchorLineNos: true
+    # codeFences: true
+    # guessSyntax: true
+    # lineNos: true
+    # style: monokai
+
+menu:
+  main:
+    - identifier: "Code"
+      name: "代码"
+      url: "/code/"
+      weight: 2
+    - identifier: "Life"
+      name: "生活"
+      url: "/life/"
+      weight: 3
+    - identifier: "Tags"
+      name: "标签"
+      url: "/tags/"
+      weight: 4
+    - identifier: "Github"
+      name: "Github"
+      url: "https://github.com/Wd0g"
+      weight: 5
+

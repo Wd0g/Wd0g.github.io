@@ -1,3 +1,0 @@
-User-agent: *
-Disallow:
-Sitemap: https://wd0g.github.io/sitemap.xml
